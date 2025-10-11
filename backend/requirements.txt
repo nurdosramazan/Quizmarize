@@ -8,3 +8,5 @@ fastapi-users[sqlalchemy]
 bcrypt
 python-multipart
 boto3
+PyPDF2
+python-docx

@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+import io
 import boto3
 from botocore.client import Config
 from botocore.exceptions import ClientError
@@ -42,6 +45,20 @@ class StorageService:
                 )
             else:
                 raise
+
+    def download_file(self, object_name: str) -> io.BytesIO | None:
+        """Download a file from an S3 bucket into an in-memory buffer."""
+        try:
+            buffer = io.BytesIO()
+            self.s3_client.download_fileobj(self.bucket_name, object_name, buffer)
+            buffer.seek(0)  # Rewind the buffer to the beginning for reading
+            return buffer
+        except ClientError as e:
+            if e.response['Error']['Code'] == '404':
+                print(f"The object {object_name} does not exist.")
+            else:
+                print(f"Error downloading file from S3: {e}")
+            return None
 
 # Create a single instance to be used across the app
 storage_service = StorageService()
