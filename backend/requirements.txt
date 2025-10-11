@@ -7,3 +7,4 @@ pydantic-settings
 fastapi-users[sqlalchemy]
 bcrypt
 python-multipart
+boto3

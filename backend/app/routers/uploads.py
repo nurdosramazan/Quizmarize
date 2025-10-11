@@ -1,16 +1,12 @@
-import shutil
-from pathlib import Path
+import uuid
 from fastapi import APIRouter, Depends, UploadFile, File as FastAPIFile, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from ..auth import current_active_user
 from ..database import get_async_session
 from ..models import User, File as DBFile
+from ..storage import storage_service
 
 router = APIRouter()
-
-# Define the base directory for uploads
-UPLOAD_DIR = Path("uploads")
-UPLOAD_DIR.mkdir(exist_ok=True)
 
 @router.post("/upload/", tags=["Uploads"])
 async def upload_file(
@@ -19,26 +15,31 @@ async def upload_file(
     db: AsyncSession = Depends(get_async_session)
 ):
     """
-    Upload a file and save it to the server.
+    Upload a file to cloud storage.
     Creates a corresponding record in the database.
     """
     if not file.content_type:
         raise HTTPException(status_code=400, detail="File has no content type")
 
-    # Define the path where the file will be saved
-    file_location = UPLOAD_DIR / f"{user.id}_{file.filename}"
+    # Generate a unique filename to avoid collisions
+    file_extension = file.filename.split(".")[-1] if "." in file.filename else ""
+    object_name = f"user_{user.id}/{uuid.uuid4()}.{file_extension}"
 
-    # Save the file to the local directory
-    try:
-        with file_location.open("wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-    finally:
-        file.file.close()
+    # Use the storage service to upload the file
+    file_url = storage_service.upload_file(
+        file_object=file.file,
+        object_name=object_name,
+        content_type=file.content_type
+    )
+
+    if not file_url:
+        raise HTTPException(status_code=500, detail="Could not upload file.")
 
     # Create a database record for the file
     db_file = DBFile(
         filename=file.filename,
-        file_path=str(file_location),
+        # The file_path is now the S3 object key or URL
+        file_path=object_name,
         content_type=file.content_type,
         owner_id=user.id
     )
@@ -50,5 +51,5 @@ async def upload_file(
         "id": db_file.id,
         "filename": db_file.filename,
         "content_type": db_file.content_type,
-        "file_path": db_file.file_path,
+        "file_url": file_url,
     }

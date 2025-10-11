@@ -1,10 +1,10 @@
 from fastapi import FastAPI, Depends
 from .auth import auth_backend, current_active_user, fastapi_users
 from .schemas import UserRead, UserCreate
-from .models import User # <-- This is now the model, not the base
-from .database import engine, Base # <-- Import Base
-from .routers import uploads # <-- Import the new router
-
+from .models import User
+from .database import engine, Base
+from .routers import uploads
+from .storage import storage_service
 
 app = FastAPI(
     title="Quizmarize API",
@@ -32,6 +32,7 @@ def get_current_user_data(user: User = Depends(current_active_user)):
 
 @app.on_event("startup")
 async def on_startup():
+    storage_service.ensure_bucket_exists()
     async with engine.begin() as conn:
         # This will create all tables, including FastAPI Users' tables
         await conn.run_sync(Base.metadata.create_all)
