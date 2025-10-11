@@ -1,11 +1,16 @@
-from sqlalchemy import create_engine
+from typing import AsyncGenerator
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
+from .config import settings
 
-DATABASE_URL = "postgresql+psycopg2://nurdos:nurdos@db:5432/quizmarize_db"
-
-engine = create_engine(DATABASE_URL)
-
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
+# Use the async engine
+engine = create_async_engine(settings.DATABASE_URL)
 Base = declarative_base()
+
+# Async session maker
+async_session_maker = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+
+async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
+    async with async_session_maker() as session:
+        yield session

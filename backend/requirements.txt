@@ -1,5 +1,9 @@
 fastapi
 uvicorn[standard]
 sqlalchemy
+asyncpg
 psycopg2-binary
 pydantic-settings
+fastapi-users[sqlalchemy]
+bcrypt
+python-multipart
