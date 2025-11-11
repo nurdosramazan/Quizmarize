@@ -2,9 +2,8 @@ import datetime
 
 from fastapi_users.db import SQLAlchemyBaseUserTable
 from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
-from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import JSONB
-
+from sqlalchemy.orm import relationship, Mapped
 from .database import Base
 
 
@@ -30,7 +29,7 @@ class File(Base):
 
     # This creates the other side of the relationship
     owner = relationship("User", back_populates="files")
-    summary = relationship("Summary", back_populates="file", uselist=False)
+    summary = relationship("Summary", back_populates="file", uselist=False, cascade="all, delete")
 
 class Summary(Base):
     __tablename__ = "summaries"
@@ -42,7 +41,7 @@ class Summary(Base):
     file_id = Column(Integer, ForeignKey("files.id"))
     file = relationship("File", back_populates="summary")
 
-    tasks = relationship("Task", back_populates="summary")
+    tasks = relationship("Task", back_populates="summary", cascade="all, delete")
 
 class Task(Base):
     __tablename__ = "tasks"

@@ -3,7 +3,7 @@ from .auth import auth_backend, current_active_user, fastapi_users
 from .schemas import UserRead, UserCreate
 from .models import User
 from .database import engine, Base
-from .routers import uploads
+from .routers import uploads, content
 from .storage import storage_service
 
 app = FastAPI(
@@ -19,7 +19,8 @@ app.include_router(
 app.include_router(
     fastapi_users.get_register_router(UserRead, UserCreate), prefix="/auth", tags=["auth"]
 )
-app.include_router(uploads.router, prefix="/content") # <-- Add the uploads router
+app.include_router(uploads.router, prefix="/content")
+app.include_router(content.router, prefix="/content")
 
 @app.get("/", tags=["Root"])
 def read_root():
