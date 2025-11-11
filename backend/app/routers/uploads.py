@@ -6,6 +6,8 @@ from ..database import get_async_session
 from ..models import User, File as DBFile
 from ..storage import storage_service
 from ..parsers import parse_content
+from ..ai_services import generate_summary
+from ..models import Summary as DBSummary
 
 router = APIRouter()
 
@@ -67,14 +69,24 @@ async def upload_file(
     db_file.content = extracted_content
     db_file.status = "completed"
 
-    await db.commit()
-    await db.refresh(db_file)
+    if db_file.content:
+        summary_text = generate_summary(db_file.content)
+
+        # --- Step 6: Save the summary to the database ---
+        db_summary = DBSummary(
+            summary_text=summary_text,
+            file_id=db_file.id
+        )
+        db.add(db_summary)
+        await db.commit()
+        await db.refresh(db_summary)
+    else:
+        summary_text = "No content to summarize."
 
     return {
         "id": db_file.id,
         "filename": db_file.filename,
-        "content_type": db_file.content_type,
-        "file_url": file_url,
         "status": db_file.status,
-        "content_preview": (extracted_content or "")[:200] + "..."
+        "content_preview": (db_file.content or "")[:200] + "...",
+        "summary": summary_text  # <-- Add the new summary to the response
     }
