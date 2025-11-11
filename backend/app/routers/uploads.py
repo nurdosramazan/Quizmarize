@@ -6,8 +6,8 @@ from ..database import get_async_session
 from ..models import User, File as DBFile
 from ..storage import storage_service
 from ..parsers import parse_content
-from ..ai_services import generate_summary
-from ..models import Summary as DBSummary
+from ..ai_services import generate_summary, generate_tasks
+from ..models import Summary as DBSummary, Task as DBTask
 
 router = APIRouter()
 
@@ -69,10 +69,14 @@ async def upload_file(
     db_file.content = extracted_content
     db_file.status = "completed"
 
+    summary_text = "No content to summarize."
+    db_summary = None
+    tasks_generated = 0
+
+    # --- Step 5, 6 & 7: AI Processing ---
     if db_file.content:
         summary_text = generate_summary(db_file.content)
 
-        # --- Step 6: Save the summary to the database ---
         db_summary = DBSummary(
             summary_text=summary_text,
             file_id=db_file.id
@@ -80,13 +84,27 @@ async def upload_file(
         db.add(db_summary)
         await db.commit()
         await db.refresh(db_summary)
-    else:
-        summary_text = "No content to summarize."
+
+        tasks_list = generate_tasks(db_file.content)
+        tasks_generated = len(tasks_list)
+
+        if tasks_list:
+            for task_item in tasks_list:
+                db_task = DBTask(
+                    task_type=task_item.get("task_type"),
+                    task_data=task_item.get("task_data"),
+                    summary_id=db_summary.id
+                )
+                db.add(db_task)
+
+            await db.commit()
 
     return {
         "id": db_file.id,
         "filename": db_file.filename,
         "status": db_file.status,
         "content_preview": (db_file.content or "")[:200] + "...",
-        "summary": summary_text  # <-- Add the new summary to the response
+        "summary": summary_text,
+        "summary_id": db_summary.id if db_summary else None,
+        "tasks_generated": tasks_generated
     }
