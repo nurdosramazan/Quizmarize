@@ -32,7 +32,7 @@ def parse_content(file_buffer: io.BytesIO, content_type: str) -> str:
         return parse_pdf(file_buffer)
     elif content_type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
         return parse_docx(file_buffer)
-    # Add more parsers here for other types like .pptx, .txt etc.
+    # todo: Add more parsers here for other types like .pptx, .txt etc.
     else:
         print(f"Unsupported content type: {content_type}")
         return ""

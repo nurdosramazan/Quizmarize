@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import uuid
 from fastapi import Depends, Request
 from fastapi_users import BaseUserManager, FastAPIUsers, IntegerIDMixin
 from fastapi_users.authentication import (
@@ -11,7 +10,7 @@ from fastapi_users.authentication import (
 from fastapi_users.db import SQLAlchemyUserDatabase
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from .database import get_async_session # We will create this function
+from .database import get_async_session
 from .models import User
 from .config import settings
 

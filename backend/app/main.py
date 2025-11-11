@@ -12,7 +12,6 @@ app = FastAPI(
     version="0.1.0"
 )
 
-# Include the routers
 app.include_router(
     fastapi_users.get_auth_router(auth_backend), prefix="/auth/jwt", tags=["auth"]
 )
@@ -35,6 +34,5 @@ def get_current_user_data(user: User = Depends(current_active_user)):
 async def on_startup():
     storage_service.ensure_bucket_exists()
     async with engine.begin() as conn:
-        # This will create all tables, including FastAPI Users' tables
         await conn.run_sync(Base.metadata.create_all)
     print("All tables created successfully!")

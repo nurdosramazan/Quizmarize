@@ -93,7 +93,6 @@ def generate_tasks(content: str) -> list:
 
     try:
         response = client.chat.completions.create(
-            # Use a model that explicitly supports JSON mode
             model="gpt-3.5-turbo-1106",
             messages=[
                 {"role": "system", "content": system_prompt},
